@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant Client
+    participant Server
+
+    rect rgb(200, 200, 255)
+        note over Client, Server: TCP Handshake
+        Client->>Server: SYN<br>Seq=0 Win=65495<br>Len=0 MSS=65495<br>SACK_PERM WS=128
+
+        note right of Server: MSS (Maximum Segment Size): max TCP payload in bytes
+        note right of Server: Win (Sliding Window Size): max bytes to accept
+        note right of Server: [OPTION] WS (Window Scale): number between [0,14]<br>to extend maximum 16-bit [65535 bytes] Window Size<br>=> Window Size * 2^num (65495 * 128 bytes ≈ 8 MB)
+        note right of Server: [OPTION] SACK_PERM: selective acknowledgment allowed
+
+        Server-->>Client: SYN, ACK<br>Seq=0 Ack=1<br>Win=65483 MSS=65495<br>SACK_PERM WS=128
+        Client->>Server: ACK<br>Seq=1 Ack=1<br>Win=65536
+    end
+
+    Client->>Server: PSH, ACK<br>Seq=1 Ack=1<br>Len=14 (Data payload)
+    note right of Server: 48656c6c6f2c2073657276657221 -> "Hello, server!"
+    Server-->>Client: ACK<br>Seq=1 Ack=15<br>Win=65536
+    Server-->>Client: FIN, ACK<br>Seq=1 Ack=15<br>Win=65536
+    Client->>Server: ACK<br>Seq=15 Ack=2<br>Win=65536
+
+    rect rgb(255, 200, 200)
+        note over Client, Server: Connection Close
+        Client->>Server: FIN, ACK<br>Seq=15 Ack=2<br>Win=65536
+        Server-->>Client: ACK<br>Seq=2 Ack=16<br>Win=65536
+    end
